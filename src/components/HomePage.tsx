@@ -1,9 +1,10 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as THREE from "three";
 
 export const HomePage = () => {
   const refContainer = useRef<HTMLDivElement>(null);
+  const [points, setPoints] = useState(0);
 
   useEffect(() => {
     if (refContainer.current) {
@@ -22,16 +23,16 @@ export const HomePage = () => {
       }
 
       // Initialize lighting
-      const light = new THREE.DirectionalLight(0xffffff, 10); // white light
+      const light = new THREE.DirectionalLight(0xffffff, 5); // white light
       light.castShadow = true;
 
-      light.position.z = 100;
+      light.position.z = 50;
       light.position.y = 100;
 
-      const light2 = new THREE.DirectionalLight(0xffffff, 10); // white light
+      const light2 = new THREE.DirectionalLight(0xffffff, 5); // white light
       light2.castShadow = true;
 
-      light2.position.z = -100;
+      light2.position.z = -50;
       light2.position.y = 100;
 
       camera.position.z = 6;
@@ -184,9 +185,9 @@ export const HomePage = () => {
       scene.add(cube);
 
       const ground = new Box({
-        width: 6,
+        width: 8,
         height: 0.2,
-        depth: 100,
+        depth: 200,
         color: 0x0000aa,
         position: {
           x: 0,
@@ -267,8 +268,8 @@ export const HomePage = () => {
       };
       let enemies: Box[] = [];
       const createEnemy = (frames: number) => {
-        const xPosition = Math.random() * 5 - 2.5; // Random x position between -4 and 4
-        const isBlue = Math.random() < 0.3; // 30% chance to be blue and killable
+        const xPosition = Math.random() * 7.8 - 3.9; // Random x position between -4 and 4
+        const isBlue = Math.random() < 0.2; // 30% chance to be blue and killable
         const addedValueSize = !isBlue
           ? frames / 2000 > 1.25
             ? 1.25
@@ -279,7 +280,7 @@ export const HomePage = () => {
           width: 1 + addedValueSize,
           depth: 1 + addedValueSize,
           zAcceleration: true,
-          color: isBlue ? 0x00ffff : 0xff0000, // Blue if killable, red if not
+          color: isBlue ? 0xffff00 : 0xff0000, // Blue if killable, red if not
           velocity: {
             x: 0,
             y: -0.01,
@@ -287,8 +288,8 @@ export const HomePage = () => {
           },
           position: {
             x: xPosition,
-            y: 0.0 + addedValueSize,
-            z: -40.0,
+            y: 1.0 + addedValueSize,
+            z: -60.0,
           },
           killable: isBlue, // Store killable status
         });
@@ -297,7 +298,7 @@ export const HomePage = () => {
       };
 
       const spawnEnemies = (frames: number) => {
-        const numberOfEnemies = Math.floor(Math.random() * 2) + 2; // Spawn 2 or 3 enemies
+        const numberOfEnemies = Math.floor(Math.random() * 3) + 3; // Spawn 2 or 3 enemies
         for (let i = 0; i < numberOfEnemies; i++) {
           const enemy = createEnemy(frames);
           if (i === 0) {
@@ -342,7 +343,9 @@ export const HomePage = () => {
 
       window.addEventListener("keyup", keyUpHandler);
 
-      let frames = 0;
+      let frames = 1;
+      let frameRate = 100;
+
       const animate = function () {
         const animationId = requestAnimationFrame(animate);
         renderer.render(scene, camera);
@@ -389,12 +392,14 @@ export const HomePage = () => {
           if (xCollision && yCollision && zCollision) {
             console.log("Collision with enemy");
             if (enemy.killable) {
+              setPoints((_points) => _points + 10);
               scene.remove(enemy);
               return false;
             } else {
               console.log("Game over! Hit a red enemy.");
               window.cancelAnimationFrame(animationId);
-              alert("Your Score is " + parseInt((frames / 10).toString()));
+              // alert("Your Score is " + parseInt((frames / 10).toString()));
+              alert("Game Over!, Your Score is " + points);
             }
           }
           if (enemy.position.z > 10) {
@@ -404,11 +409,15 @@ export const HomePage = () => {
           return true;
         });
 
-        frames += 1;
-
-        if (frames % 90 === 0) {
+        if (frames % frameRate === 0) {
+          for (let threshold = 1000; threshold <= 50000; threshold += 1000) {
+            if (frames > threshold && frameRate >= 60) {
+              frameRate -= 1;
+            }
+          }
           spawnEnemies(frames);
         }
+        frames += 1;
       };
 
       animate();
@@ -419,5 +428,24 @@ export const HomePage = () => {
     }
   }, []);
 
-  return <div ref={refContainer} style={{ width: "100vw", height: "100vh" }} />;
+  return (
+    <div
+      ref={refContainer}
+      style={{ width: "100vw", height: "100vh", position: "relative" }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          padding: "10px",
+          fontSize: "18px",
+          color: "white",
+          backgroundColor: "rgba(0,0,0,0.5)",
+        }}
+      >
+        Points: {points.toLocaleString()}
+      </div>
+    </div>
+  );
 };
