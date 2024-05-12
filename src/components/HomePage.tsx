@@ -31,6 +31,10 @@ export const HomePage = () => {
         depth: number;
         bottom: number;
         top: number;
+        left: number;
+        right: number;
+        back: number;
+        front: number;
         velocity: {
           x: number;
           y: number;
@@ -82,11 +86,23 @@ export const HomePage = () => {
           this.position.set(position.x, position.y, position.z);
           this.bottom = this.position.y - this.height / 2;
           this.top = this.position.y + this.height / 2;
+          this.right = this.position.x + this.width / 2;
+          this.left = this.position.x - this.width / 2;
+          this.back = this.position.z - this.depth / 2;
+          this.front = this.position.z + this.depth / 2;
+        }
+
+        updateSides() {
+          this.bottom = this.position.y - this.height / 2;
+          this.top = this.position.y + this.height / 2;
+          this.right = this.position.x + this.width / 2;
+          this.left = this.position.x - this.width / 2;
+          this.back = this.position.z - this.depth / 2;
+          this.front = this.position.z + this.depth / 2;
         }
 
         update(ground: Box) {
-          this.bottom = this.position.y - this.height / 2;
-          this.top = this.position.y + this.height / 2;
+          this.updateSides();
           // console.log(this.bottom, ground.top);
           this.position.x += this.velocity.x;
           this.position.z += this.velocity.z;
@@ -96,14 +112,32 @@ export const HomePage = () => {
 
         applyGravity(ground: Box) {
           this.velocity.y += this.gravity;
-          if (this.bottom + this.velocity.y <= ground.top) {
+          const { xCollision, yCollision, zCollision } = boxCollision({
+            box1: cube,
+            box2: ground,
+          });
+
+          if (xCollision && yCollision && zCollision) {
             this.velocity.y = -this.velocity.y;
-            this.velocity.y *= 0.65;
+            this.velocity.y *= 0.45;
           } else {
             this.position.y += this.velocity.y;
           }
         }
       }
+
+      const boxCollision = ({ box1, box2 }: { box1: Box; box2: Box }) => {
+        const zCollision = box1.front >= box2.back && box1.back <= box2.front;
+        const xCollision = box1.right >= box2.left && box1.left <= box2.right;
+        const yCollision =
+          box1.bottom + box1.velocity.y <= box2.top && box1.top >= box2.bottom;
+        return {
+          xCollision,
+          yCollision,
+          zCollision,
+        };
+      };
+
       const cube = new Box({
         height: 1,
         width: 1,
@@ -133,8 +167,8 @@ export const HomePage = () => {
 
       const ground = new Box({
         width: 5,
-        height: 0.5,
-        depth: 10,
+        height: 0.2,
+        depth: 100,
         color: 0x0000aa,
         position: {
           x: 0,
@@ -225,15 +259,21 @@ export const HomePage = () => {
         cube.update(ground);
         cube.velocity.x = 0;
         cube.velocity.z = 0;
-        if (keys.A.pressed) cube.velocity.x += -0.1;
 
-        if (keys.D.pressed) cube.velocity.x += 0.1;
+        // left and right
+        if (keys.A.pressed && keys.D.pressed) {
+        } else if (keys.A.pressed) cube.velocity.x += -0.1;
+        else if (keys.D.pressed) cube.velocity.x += 0.1;
+        if (keys.S.pressed && keys.W.pressed) {
+        }
 
-        if (keys.S.pressed) cube.velocity.z += +0.1;
+        // forward and back
+        if (keys.S.pressed && keys.W.pressed) {
+        } else if (keys.S.pressed) cube.velocity.z += +0.1;
+        else if (keys.W.pressed) cube.velocity.z += -0.1;
 
-        if (keys.W.pressed) cube.velocity.z += -0.1;
-
-        if (keys.Space.pressed) cube.velocity.y += 0.015;
+        if (keys.Space.pressed && Math.abs(cube.bottom - ground.top) < 0.1)
+          cube.velocity.y += 0.05;
         // Update controls
         controls.update();
 
