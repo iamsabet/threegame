@@ -398,8 +398,10 @@ export const HomePage = () => {
             } else {
               console.log("Game over! Hit a red enemy.");
               window.cancelAnimationFrame(animationId);
-              // alert("Your Score is " + parseInt((frames / 10).toString()));
-              alert("Game Over!, Your Score is " + points);
+              alert(
+                "Your Total Frame Score is " +
+                  parseInt((frames / 10).toString())
+              );
             }
           }
           if (enemy.position.z > 10) {
