@@ -270,8 +270,8 @@ export const HomePage = () => {
         const xPosition = Math.random() * 5 - 2.5; // Random x position between -4 and 4
         const isBlue = Math.random() < 0.3; // 30% chance to be blue and killable
         const addedValueSize = !isBlue
-          ? frames / 2000 > 1.5
-            ? 1.5
+          ? frames / 2000 > 1.25
+            ? 1.25
             : frames / 2000
           : 0;
         const enemy = new Box({
@@ -287,7 +287,7 @@ export const HomePage = () => {
           },
           position: {
             x: xPosition,
-            y: 0.0,
+            y: 0.0 + addedValueSize,
             z: -40.0,
           },
           killable: isBlue, // Store killable status
@@ -406,7 +406,7 @@ export const HomePage = () => {
 
         frames += 1;
 
-        if (frames % 60 === 0) {
+        if (frames % 90 === 0) {
           spawnEnemies(frames);
         }
       };
