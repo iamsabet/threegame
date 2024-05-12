@@ -88,8 +88,12 @@ export const HomePage = () => {
           this.bottom = this.position.y - this.height / 2;
           this.top = this.position.y + this.height / 2;
           // console.log(this.bottom, ground.top);
+          this.position.x += this.velocity.x;
+          this.position.z += this.velocity.z;
+
           this.applyGravity(ground);
         }
+
         applyGravity(ground: Box) {
           this.velocity.y += this.gravity;
           if (this.bottom + this.velocity.y <= ground.top) {
@@ -142,13 +146,94 @@ export const HomePage = () => {
       ground.position.y = -2;
       ground.position.x = 0;
       scene.add(ground);
+      let keys = {
+        A: {
+          pressed: false,
+        },
+        D: {
+          pressed: false,
+        },
+        W: {
+          pressed: false,
+        },
+        S: {
+          pressed: false,
+        },
+        Space: {
+          pressed: false,
+        },
+      };
+      const keyDownHandler = (e: KeyboardEvent) => {
+        switch (e.code) {
+          case "KeyA":
+            keys.A.pressed = true;
+
+            break;
+          case "KeyD":
+            keys.D.pressed = true;
+
+            break;
+          case "KeyW":
+            keys.W.pressed = true;
+
+            break;
+
+          case "KeyS":
+            keys.S.pressed = true;
+            break;
+          case "Space":
+            keys.Space.pressed = true;
+            break;
+          default:
+            break;
+        }
+      };
+      const keyUpHandler = (e: KeyboardEvent) => {
+        switch (e.code) {
+          case "KeyA":
+            keys.A.pressed = false;
+
+            break;
+          case "KeyD":
+            keys.D.pressed = false;
+
+            break;
+          case "KeyW":
+            keys.W.pressed = false;
+
+            break;
+
+          case "KeyS":
+            keys.S.pressed = false;
+            break;
+          case "Space":
+            keys.Space.pressed = false;
+            break;
+          default:
+            break;
+        }
+      };
+
+      window.addEventListener("keydown", keyDownHandler);
+
+      window.addEventListener("keyup", keyUpHandler);
 
       const animate = function () {
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
 
         cube.update(ground);
+        cube.velocity.x = 0;
+        cube.velocity.z = 0;
+        if (keys.A.pressed) cube.velocity.x += -0.1;
 
+        if (keys.D.pressed) cube.velocity.x += 0.1;
+
+        if (keys.S.pressed) cube.velocity.z += +0.1;
+
+        if (keys.W.pressed) cube.velocity.z += -0.1;
+
+        if (keys.Space.pressed) cube.velocity.y += 0.015;
         // Update controls
         controls.update();
 
