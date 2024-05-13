@@ -160,7 +160,7 @@ export const HomePage = () => {
         update(ground: Box) {
           this.updateSides();
           // console.log(this.bottom, ground.top);
-          if (this.zAcceleration) this.velocity.z += 0.001;
+          if (this.zAcceleration) this.velocity.z += 0.0005;
 
           this.position.x += this.velocity.x;
           this.position.z += this.velocity.z;
@@ -218,7 +218,7 @@ export const HomePage = () => {
       scene.add(hero);
 
       const ground = new Box({
-        width: 8,
+        width: 9,
         height: 1,
         isGround: true,
         depth: 200,
@@ -302,11 +302,11 @@ export const HomePage = () => {
       };
       let enemies: Box[] = [];
       const createEnemy = (frames: number) => {
-        const xPosition = Math.random() * 7.8 - 3.9; // Random x position between -4 and 4
+        const xPosition = Math.random() * 8 - 4; // Random x position between -4 and 4
         const isBlue = Math.random() < 0.2; // 30% chance to be blue and killable
         const addedValueSize = !isBlue
-          ? frames / 2000 > 1.2
-            ? 1.2
+          ? frames / 2000 > 0.5
+            ? 0.5
             : frames / 2000
           : 0;
         const enemy = new Box({
@@ -338,36 +338,24 @@ export const HomePage = () => {
           if (i === 0) {
             scene.add(enemy);
             enemies.push(enemy);
-          } else if (i === 1) {
-            if (enemies.length > 0) {
-              const [xCollision, yCollision, zCollision] = boxCollision({
-                box1: enemies[enemies.length - 1],
-                box2: enemy,
-              });
-
-              if (xCollision && yCollision && zCollision) {
+          } else if (i >= 1) {
+            for (let j = 1; j < i; j++) {
+              if (enemies[enemies.length - j]) {
+                const [xCollision, yCollision, zCollision] = boxCollision({
+                  box1: enemies[enemies.length - j],
+                  box2: enemy,
+                });
+                if (xCollision && yCollision && zCollision) {
+                  break;
+                }
+                if (j === Math.max(0, enemies.length - 2)) {
+                  scene.add(enemy);
+                  enemies.push(enemy);
+                }
               } else {
                 scene.add(enemy);
                 enemies.push(enemy);
-              }
-            }
-          } else if (i === 2) {
-            if (enemies.length > 1) {
-              const [xCollision, yCollision, zCollision] = boxCollision({
-                box1: enemies[enemies.length - 1],
-                box2: enemy,
-              });
-              const [xCollision2, yCollision2, zCollision2] = boxCollision({
-                box1: enemies[enemies.length - 2],
-                box2: enemy,
-              });
-              if (
-                (xCollision && yCollision && zCollision) ||
-                (xCollision2 && yCollision2 && zCollision2)
-              ) {
-              } else {
-                scene.add(enemy);
-                enemies.push(enemy);
+                break;
               }
             }
           }
@@ -448,16 +436,15 @@ export const HomePage = () => {
         });
 
         if (frames % frameRate === 0) {
-          for (let threshold = 1000; threshold <= 50000; threshold += 1000) {
-            if (frames > threshold && frameRate >= 60) {
-              frameRate -= 1;
-            }
+          const round = frames % 150 === 0; // each 10 second
+          if (round && frameRate > 20) {
+            frameRate -= 1;
           }
           spawnEnemies(frames);
         }
         frames += 1;
 
-        hero.rotation.x -= 0.1;
+        hero.rotation.x -= frameRate / 1000;
       };
 
       animate();
