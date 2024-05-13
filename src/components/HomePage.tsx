@@ -9,6 +9,9 @@ export const HomePage = () => {
   useEffect(() => {
     if (refContainer.current) {
       const scene = new THREE.Scene();
+      const textureLoader = new THREE.TextureLoader();
+      const rockTexture = textureLoader.load(`/rock.png`);
+      const woodtexture = textureLoader.load(`/wood.png`);
       const camera = new THREE.PerspectiveCamera(
         75,
         window.innerWidth / window.innerHeight,
@@ -23,22 +26,26 @@ export const HomePage = () => {
       }
 
       // Initialize lighting
-      const light = new THREE.DirectionalLight(0xffffff, 5); // white light
+      const light = new THREE.DirectionalLight(0xffffff, 4); // white light
       light.castShadow = true;
 
       light.position.z = 50;
-      light.position.y = 100;
+      light.position.y = 200;
+      light.position.x = 50;
+      camera.position.z = 6;
+      camera.position.y = 3;
+      // Initialize lighting
+      const light2 = new THREE.DirectionalLight(0xffffff, 4); // white light
+      light2.castShadow = false;
 
-      const light2 = new THREE.DirectionalLight(0xffffff, 5); // white light
-      light2.castShadow = true;
-
-      light2.position.z = -50;
-      light2.position.y = 100;
-
+      light2.position.z = -100;
+      light2.position.y = 50;
+      light2.position.x = 0;
       camera.position.z = 6;
       camera.position.y = 3;
 
       scene.add(light);
+      scene.add(light2);
       const controls = new OrbitControls(camera, renderer.domElement);
 
       class Box extends THREE.Mesh {
@@ -59,6 +66,8 @@ export const HomePage = () => {
         gravity: number;
         zAcceleration: boolean;
         killable: boolean;
+        hero: boolean;
+
         constructor({
           color,
           height,
@@ -66,6 +75,7 @@ export const HomePage = () => {
           depth,
           zAcceleration = false,
           killable = false,
+          isGround = false,
           velocity = {
             x: 0,
             y: 0,
@@ -76,11 +86,13 @@ export const HomePage = () => {
             y: 0,
             z: 0,
           },
+          hero = false,
         }: {
           color: THREE.ColorRepresentation | undefined;
           height: number;
           width: number;
           depth: number;
+          isGround?: boolean;
           zAcceleration?: boolean;
           killable?: boolean;
           velocity?: {
@@ -93,35 +105,56 @@ export const HomePage = () => {
             y: number;
             z: number;
           };
+          hero?: boolean;
         }) {
-          const geometry = new THREE.BoxGeometry(width, height, depth);
+          const geometry = hero
+            ? new THREE.SphereGeometry(width, 100, 100)
+            : new THREE.BoxGeometry(width, height, depth);
           const material = new THREE.MeshStandardMaterial({
-            color: color ?? 0x00ff11,
+            color: !hero ? color ?? 0x00ff11 : undefined,
+            map: hero ? rockTexture : !isGround ? woodtexture : undefined,
           });
           super(geometry, material);
+          this.hero = hero;
           this.height = height;
           this.width = width;
           this.depth = depth;
           this.gravity = -0.005;
           this.velocity = velocity;
           this.position.set(position.x, position.y, position.z);
-          this.bottom = this.position.y - this.height / 2;
           this.zAcceleration = zAcceleration;
           this.killable = killable;
-          this.top = this.position.y + this.height / 2;
-          this.right = this.position.x + this.width / 2;
-          this.left = this.position.x - this.width / 2;
-          this.back = this.position.z - this.depth / 2;
-          this.front = this.position.z + this.depth / 2;
+          this.bottom =
+            this.position.y -
+            (this.hero ? this.width : this.height) / (this.hero ? 1 : 2);
+          this.top =
+            this.position.y +
+            (this.hero ? this.width : this.height) / (this.hero ? 1 : 2);
+          this.right = this.position.x + this.width / (this.hero ? 1 : 2);
+          this.left = this.position.x - this.width / (this.hero ? 1 : 2);
+          this.back =
+            this.position.z -
+            (this.hero ? this.width : this.depth) / (this.hero ? 1 : 2);
+          this.front =
+            this.position.z +
+            (this.hero ? this.width : this.depth) / (this.hero ? 1 : 2);
         }
 
         updateSides() {
-          this.bottom = this.position.y - this.height / 2;
-          this.top = this.position.y + this.height / 2;
-          this.right = this.position.x + this.width / 2;
-          this.left = this.position.x - this.width / 2;
-          this.back = this.position.z - this.depth / 2;
-          this.front = this.position.z + this.depth / 2;
+          this.bottom =
+            this.position.y -
+            (this.hero ? this.width : this.height) / (this.hero ? 1 : 2);
+          this.top =
+            this.position.y +
+            (this.hero ? this.width : this.height) / (this.hero ? 1 : 2);
+          this.right = this.position.x + this.width / (this.hero ? 1 : 2);
+          this.left = this.position.x - this.width / (this.hero ? 1 : 2);
+          this.back =
+            this.position.z -
+            (this.hero ? this.width : this.depth) / (this.hero ? 1 : 2);
+          this.front =
+            this.position.z +
+            (this.hero ? this.width : this.depth) / (this.hero ? 1 : 2);
         }
 
         update(ground: Box) {
@@ -164,29 +197,30 @@ export const HomePage = () => {
         return [xCollision, yCollision, zCollision];
       };
 
-      const cube = new Box({
-        height: 1,
-        width: 1,
-        depth: 1,
+      const hero = new Box({
+        hero: true,
+        height: 1, // not important in sphere
+        width: 0.45, // works as radius
+        depth: 1, // not important in sphere
         color: 0x00ff11,
         velocity: {
           x: 0,
-          y: -0.001,
+          y: -0.0005,
           z: 0,
         },
         position: {
           x: 0,
-          y: 0.5,
+          y: 2,
           z: 0,
         },
       });
-
-      cube.castShadow = true;
-      scene.add(cube);
+      hero.castShadow = true;
+      scene.add(hero);
 
       const ground = new Box({
         width: 8,
-        height: 0.2,
+        height: 1,
+        isGround: true,
         depth: 200,
         color: 0x0000aa,
         position: {
@@ -271,8 +305,8 @@ export const HomePage = () => {
         const xPosition = Math.random() * 7.8 - 3.9; // Random x position between -4 and 4
         const isBlue = Math.random() < 0.2; // 30% chance to be blue and killable
         const addedValueSize = !isBlue
-          ? frames / 2000 > 1.25
-            ? 1.25
+          ? frames / 2000 > 1.2
+            ? 1.2
             : frames / 2000
           : 0;
         const enemy = new Box({
@@ -293,7 +327,7 @@ export const HomePage = () => {
           },
           killable: isBlue, // Store killable status
         });
-
+        enemy.castShadow = true;
         return enemy;
       };
 
@@ -350,34 +384,34 @@ export const HomePage = () => {
         const animationId = requestAnimationFrame(animate);
         renderer.render(scene, camera);
 
-        cube.velocity.x = 0;
-        cube.velocity.z = 0;
+        hero.velocity.x = 0;
+        hero.velocity.z = 0;
 
         // left and right
         if (keys.A.pressed && keys.D.pressed) {
-        } else if (keys.A.pressed) cube.velocity.x += -0.12;
-        else if (keys.D.pressed) cube.velocity.x += 0.12;
+        } else if (keys.A.pressed) hero.velocity.x += -0.12;
+        else if (keys.D.pressed) hero.velocity.x += 0.12;
 
         // forward and back
         if (keys.S.pressed && keys.W.pressed) {
-        } else if (keys.S.pressed) cube.velocity.z += +0.12;
-        else if (keys.W.pressed) cube.velocity.z += -0.12;
+        } else if (keys.S.pressed) hero.velocity.z += +0.12;
+        else if (keys.W.pressed) hero.velocity.z += -0.12;
 
-        if (keys.Space.pressed && Math.abs(cube.bottom - ground.top) < 0.1)
-          cube.velocity.y += 0.06;
+        if (keys.Space.pressed && Math.abs(hero.bottom - ground.top) < 0.1)
+          hero.velocity.y += 0.06;
 
-        cube.update(ground);
+        hero.update(ground);
 
-        // Update camera position to follow the cube along the Z-axis
+        // Update camera position to follow the hero along the Z-axis
         const fixedXPosition = 3; // Keep X position fixed
         const fixedYPosition = 3; // Keep Y position fixed
-        const distanceBehindCube = 5; // Distance behind the cube along the Z-axis
+        const distanceBehindhero = 5; // Distance behind the hero along the Z-axis
         camera.position.x = fixedXPosition;
         camera.position.y = fixedYPosition;
-        // camera.position.z = cube.position.z + distanceBehindCube;
+        // camera.position.z = hero.position.z + distanceBehindhero;
 
-        // Ensure the camera looks at the cube
-        camera.lookAt(cube.position);
+        // Ensure the camera looks at the hero
+        camera.lookAt(hero.position);
 
         // Update controls
         controls.autoRotate = false;
@@ -386,7 +420,7 @@ export const HomePage = () => {
         enemies = enemies.filter((enemy) => {
           enemy.update(ground);
           const [xCollision, yCollision, zCollision] = boxCollision({
-            box1: cube,
+            box1: hero,
             box2: enemy,
           });
           if (xCollision && yCollision && zCollision) {
@@ -396,11 +430,13 @@ export const HomePage = () => {
               scene.remove(enemy);
               return false;
             } else {
+              const framesPoint = parseInt((frames / 10).toString());
               console.log("Game over! Hit a red enemy.");
               window.cancelAnimationFrame(animationId);
+              let element = document.getElementById("p");
               alert(
-                "Your Total Frame Score is " +
-                  parseInt((frames / 10).toString())
+                "Total Score : " +
+                  (framesPoint + (element ? parseInt(element.innerText) : 0))
               );
             }
           }
@@ -420,6 +456,8 @@ export const HomePage = () => {
           spawnEnemies(frames);
         }
         frames += 1;
+
+        hero.rotation.x -= 0.1;
       };
 
       animate();
@@ -436,6 +474,7 @@ export const HomePage = () => {
       style={{ width: "100vw", height: "100vh", position: "relative" }}
     >
       <div
+        className="points"
         style={{
           position: "absolute",
           right: 0,
@@ -446,7 +485,7 @@ export const HomePage = () => {
           backgroundColor: "rgba(0,0,0,0.5)",
         }}
       >
-        Points: {points.toLocaleString()}
+        Points: <span id="p">{points.toLocaleString()}</span>
       </div>
     </div>
   );
